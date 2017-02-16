@@ -43,7 +43,7 @@ usage (char *name)
 {
   fprintf (stderr,
            "Usage:\n"
-           "\t%s <rx|tx> <port> <len>\n"
+           "\t%s <rx|tx <addr_src> <addr_dst> <port_src>> <port_dst> <len>\n"
            "\nInput is read from stdin, output is sent to stdout.\n"
            "\nRX Mode:\n"
            "Input is consecutive raw IP datagrams of length len. Output is\n"
@@ -62,12 +62,13 @@ main (int argc, char **argv)
   uint8_t buf_in[IP_MAX_DGRAM_LEN], buf_out[IP_MAX_DGRAM_LEN];
   size_t n;
   bool rx;
-  size_t dgram_len;
+  size_t len;
   uint16_t buf_out_len;
-  uint32_t addr_src;
-  uint16_t port, port_src;
+  uint32_t addr_src_l;
+  uint16_t port_dst, port_src;
+  char *addr_src, *addr_dst;
 
-  if (argc < 4)
+  if (argc < 2)
     {
       fprintf (stderr, "Not enough arguments\n");
       usage (argv[0]);
@@ -83,21 +84,37 @@ main (int argc, char **argv)
       usage (argv[0]);
       return EXIT_FAILURE;
     }
-  port = atoi (argv[2]);
-  dgram_len = atoi (argv[3]);
-
-  /* TODO */
-  if (!rx)
+  if (rx)
     {
-      fprintf (stderr, "TX mode not supported yet\n");
-      return EXIT_FAILURE;
+      if (argc < 4)
+        {
+          fprintf (stderr, "Not enough arguments\n");
+          usage (argv[0]);
+          return EXIT_FAILURE;
+        }
+      port_dst = atoi (argv[2]);
+      len = atoi (argv[3]);
+    }
+  else
+    {
+      if (argc < 7)
+        {
+          fprintf (stderr, "Not enough arguments\n");
+          usage (argv[0]);
+          return EXIT_FAILURE;
+        }
+      addr_src = argv[2];
+      addr_dst = argv[3];
+      port_src = atoi (argv[4]);
+      port_dst = atoi (argv[5]);
+      len = atoi (argv[6]);
     }
 
   fp_in = stdin;
   fp_out = stdout;
   while (0 == feof (fp_in))
     {
-      n = fread (buf_in, dgram_len, 1, fp_in);
+      n = fread (buf_in, len, 1, fp_in);
       if (1 != n)
         {
           if (feof (fp_in))
@@ -110,11 +127,11 @@ main (int argc, char **argv)
             }
         }
       if (rx)
-        status = udp_rx (true, port, buf_in, dgram_len, buf_out, &buf_out_len,
-                         &port_src, &addr_src);
+        status = udp_rx (true, port_dst, buf_in, len, buf_out, &buf_out_len,
+                         &port_src, &addr_src_l);
       else
-        status = udp_tx (true, port, 0, buf_in, dgram_len, buf_out,
-                         &buf_out_len);
+        status = udp_tx (true, addr_src, addr_dst, port_src, port_dst, buf_in,
+                         len, buf_out, &buf_out_len);
       if (0 != status)
         {
           fprintf (stderr, "Transfer error: %x\n", status);

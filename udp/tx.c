@@ -30,21 +30,84 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <inttypes.h>
+#include <assert.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include "checksum.h"
 #include "config.h"
 #include "tx.h"
 
-int
-udp_tx (bool verbose, uint16_t port_src, uint16_t port_dst,
-        const uint8_t *data, size_t data_len, uint8_t *out, uint16_t *out_len)
-{
-  (void) verbose;
-  (void) port_src;
-  (void) port_dst;;
-  (void) data;
-  (void) data_len;
-  (void) out;
-  (void) out_len;
+struct udp_dgram_pseudo_hdr {
+    uint32_t addr_src;
+    uint32_t addr_dst;
+    uint16_t proto;
+    uint16_t udp_len;
+};
 
-  return -1;
+struct udp_dgram_hdr {
+    uint16_t port_src;
+    uint16_t port_dst;
+    uint16_t len;
+    uint16_t checksum;
+};
+
+/* NOTE: Didn't bother to mimic HDL flow like with udp_rx */
+int
+udp_tx (bool verbose, const char *addr_src, const char *addr_dst,
+        uint16_t port_src, uint16_t port_dst, const uint8_t *data,
+        size_t data_len, uint8_t *out, uint16_t *out_len)
+{
+  struct udp_dgram_hdr *hdr;
+  struct udp_dgram_pseudo_hdr pseudo_hdr;
+  uint8_t *payload;
+  struct in_addr a;
+
+  assert (UINT16_MAX >= sizeof (*hdr) + data_len);
+
+  hdr = (struct udp_dgram_hdr *)out;
+  payload = out + sizeof (*hdr);
+
+  hdr->port_src = htons (port_src);
+  hdr->port_dst = htons (port_dst);
+  hdr->len = htons (sizeof (*hdr) + data_len);
+  assert (0 != inet_aton (addr_src, &a));
+  pseudo_hdr.addr_src = a.s_addr;
+  assert (0 != inet_aton (addr_dst, &a));
+  pseudo_hdr.addr_dst = a.s_addr;
+  pseudo_hdr.proto = htons (UDP_PROTO);
+  pseudo_hdr.udp_len = hdr->len;
+  /* Copy data payload */
+  for (size_t i = 0; i < data_len; ++i)
+    payload[i] = data[i];
+  *out_len = ntohs (hdr->len);
+  /* Handle checksum calculation */
+  checksum_reset ();
+  checksum_update (hdr->port_src);
+  checksum_update (hdr->port_dst);
+  checksum_update (hdr->len);
+  checksum_update32 (pseudo_hdr.addr_src);
+  checksum_update32 (pseudo_hdr.addr_dst);
+  checksum_update (pseudo_hdr.proto);
+  checksum_update (pseudo_hdr.udp_len);
+  size_t word_len = data_len / 2;
+  for (uint16_t *d = (uint16_t *)payload; d < (uint16_t *)payload + word_len;
+       ++d)
+    checksum_update (*d);
+  if (0 != data_len % 2)
+    checksum_update (htons (data[data_len - 1] << 8));
+  hdr->checksum = checksum_get_hdr_fmt ();
+
+  if (verbose)
+    {
+      fprintf (stderr, "Source port: %" PRIu16 "\n", ntohs (hdr->port_src));
+      fprintf (stderr, "Destination port: %" PRIu16 "\n",
+               ntohs (hdr->port_dst));
+      fprintf (stderr, "Length: %" PRIu16 "\n", ntohs (hdr->len));
+      fprintf (stderr, "Checksum: %#" PRIx16 "\n", ntohs (hdr->checksum));
+    }
+
+  return 0;
 }
