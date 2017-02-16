@@ -172,9 +172,10 @@ udp_rx_pipeline (uint16_t port, const uint8_t *data, size_t len, uint8_t *out,
 }
 
 int
-udp_rx (bool verbose, uint16_t port, const uint8_t *ip_dgram,
+udp_rx (bool verbose, uint16_t port_dst, const uint8_t *ip_dgram,
         size_t ip_dgram_len, uint8_t *out, uint16_t *out_len,
-        uint16_t *port_src, uint32_t *addr_src)
+        uint16_t *out_port_dst, uint16_t *out_port_src,
+        uint32_t *out_addr_src)
 {
   assert (ip_dgram_len <= UINT16_MAX);
 
@@ -187,9 +188,9 @@ udp_rx (bool verbose, uint16_t port, const uint8_t *ip_dgram,
     {
       size_t l;
       if (ip_dgram_len - i < UDP_DATA_WIDTH_BYTES)
-        udp_rx_pipeline (port, &ip_dgram[i], ip_dgram_len - i, out, &l);
+        udp_rx_pipeline (port_dst, &ip_dgram[i], ip_dgram_len - i, out, &l);
       else
-        udp_rx_pipeline (port, &ip_dgram[i], UDP_DATA_WIDTH_BYTES, out, &l);
+        udp_rx_pipeline (port_dst, &ip_dgram[i], UDP_DATA_WIDTH_BYTES, out, &l);
       *out_len += l;
       out += l;
     }
@@ -218,8 +219,9 @@ udp_rx (bool verbose, uint16_t port, const uint8_t *ip_dgram,
       fprintf (stderr, "Error: %d\n", error);
     }
 
-  *port_src = hdr_udp_port_src;
-  *addr_src = hdr_ip_addr_src;
+  *out_port_src = htons (hdr_udp_port_src);
+  *out_port_dst = htons (hdr_udp_port_dst);
+  *out_addr_src = htonl (hdr_ip_addr_src);
   if (RX_ERROR_NONE == error)
     return 0;
   else

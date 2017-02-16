@@ -41,6 +41,7 @@
 /* Returns 0 on success */
 int udp_tx (bool verbose, const char *addr_src, const char *addr_dst,
             uint16_t port_src, uint16_t port_dst, const uint8_t *data,
-            size_t data_len, uint8_t *out, uint16_t *out_len);
+            size_t data_len, uint8_t *out, uint16_t *out_len,
+            uint32_t *out_addr_src, uint32_t *out_addr_dst);
 
 #endif /* TX_H */

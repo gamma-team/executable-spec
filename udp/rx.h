@@ -45,8 +45,9 @@
 /* Initializes and sends data to the internal data processing function.
  * Returns 0 on success
  */
-int udp_rx (bool verbose, uint16_t port, const uint8_t *ip_dgram,
+int udp_rx (bool verbose, uint16_t port_dst, const uint8_t *ip_dgram,
             size_t ip_dgram_len, uint8_t *out, uint16_t *out_len,
-            uint16_t *port_src, uint32_t *addr_src);
+            uint16_t *out_port_dst, uint16_t *out_port_src,
+            uint32_t *out_addr_src);
 
 #endif /* RX_H */

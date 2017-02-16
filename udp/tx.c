@@ -58,7 +58,8 @@ struct udp_dgram_hdr {
 int
 udp_tx (bool verbose, const char *addr_src, const char *addr_dst,
         uint16_t port_src, uint16_t port_dst, const uint8_t *data,
-        size_t data_len, uint8_t *out, uint16_t *out_len)
+        size_t data_len, uint8_t *out, uint16_t *out_len,
+        uint32_t *out_addr_src, uint32_t *out_addr_dst)
 {
   struct udp_dgram_hdr *hdr;
   struct udp_dgram_pseudo_hdr pseudo_hdr;
@@ -99,6 +100,9 @@ udp_tx (bool verbose, const char *addr_src, const char *addr_dst,
   if (0 != data_len % 2)
     checksum_update (htons (data[data_len - 1] << 8));
   hdr->checksum = checksum_get_hdr_fmt ();
+  /* Fill in remaining outputs */
+  *out_addr_src = pseudo_hdr.addr_src;
+  *out_addr_dst = pseudo_hdr.addr_dst;
 
   if (verbose)
     {
