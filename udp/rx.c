@@ -60,7 +60,7 @@ static uint16_t hdr_udp_len;
  * data, rather than just extracting data from a complete datagram.
  */
 static void
-udp_rx_pipeline (uint16_t port, const uint8_t *data, size_t len, uint8_t *out,
+udp_rx_pipeline (const uint8_t *data, size_t len, uint8_t *out,
                  size_t *out_len)
 {
   if (0 == count)
@@ -135,9 +135,6 @@ udp_rx_pipeline (uint16_t port, const uint8_t *data, size_t len, uint8_t *out,
                 case UDP_HDR_OFF_PORT_DST:
                   hdr_udp_port_dst = ntohs (s);
                   checksum_update (s);
-                  /* Raise error if port does not match */
-                  if (hdr_udp_port_dst != port)
-                    error |= RX_ERROR_PORT;
                   break;
                 case UDP_HDR_OFF_LEN:
                   hdr_udp_len = ntohs (s);
@@ -172,12 +169,13 @@ udp_rx_pipeline (uint16_t port, const uint8_t *data, size_t len, uint8_t *out,
 }
 
 int
-udp_rx (bool verbose, uint16_t port_dst, const uint8_t *ip_dgram,
-        size_t ip_dgram_len, uint8_t *out, uint16_t *out_len,
-        uint16_t *out_port_dst, uint16_t *out_port_src,
+udp_rx (bool verbose, uint32_t addr_src, uint32_t addr_dst, uint8_t proto,
+        const uint8_t *ip_dgram, size_t ip_dgram_len, uint8_t *out,
+        uint16_t *out_len, uint16_t *out_port_dst, uint16_t *out_port_src,
         uint32_t *out_addr_src)
 {
   assert (ip_dgram_len <= UINT16_MAX);
+  assert (proto == UDP_PROTO);
 
   error = RX_ERROR_NONE;
   count = 0;
@@ -188,9 +186,9 @@ udp_rx (bool verbose, uint16_t port_dst, const uint8_t *ip_dgram,
     {
       size_t l;
       if (ip_dgram_len - i < UDP_DATA_WIDTH_BYTES)
-        udp_rx_pipeline (port_dst, &ip_dgram[i], ip_dgram_len - i, out, &l);
+        udp_rx_pipeline (&ip_dgram[i], ip_dgram_len - i, out, &l);
       else
-        udp_rx_pipeline (port_dst, &ip_dgram[i], UDP_DATA_WIDTH_BYTES, out, &l);
+        udp_rx_pipeline (&ip_dgram[i], UDP_DATA_WIDTH_BYTES, out, &l);
       *out_len += l;
       out += l;
     }
@@ -221,7 +219,7 @@ udp_rx (bool verbose, uint16_t port_dst, const uint8_t *ip_dgram,
 
   *out_port_src = htons (hdr_udp_port_src);
   *out_port_dst = htons (hdr_udp_port_dst);
-  *out_addr_src = htonl (hdr_ip_addr_src);
+  *out_addr_src = addr_src;
   if (RX_ERROR_NONE == error)
     return 0;
   else

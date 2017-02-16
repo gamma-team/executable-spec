@@ -34,8 +34,6 @@
 #include <inttypes.h>
 #include <assert.h>
 #include <arpa/inet.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include "checksum.h"
 #include "config.h"
 #include "tx.h"
@@ -56,15 +54,14 @@ struct udp_dgram_hdr {
 
 /* NOTE: Didn't bother to mimic HDL flow like with udp_rx */
 int
-udp_tx (bool verbose, const char *addr_src, const char *addr_dst,
-        uint16_t port_src, uint16_t port_dst, const uint8_t *data,
-        size_t data_len, uint8_t *out, uint16_t *out_len,
-        uint32_t *out_addr_src, uint32_t *out_addr_dst)
+udp_tx (bool verbose, uint32_t addr_src, uint32_t addr_dst, uint16_t port_src,
+        uint16_t port_dst, const uint8_t *data, size_t data_len,
+        uint8_t *out, uint16_t *out_len, uint32_t *out_addr_src,
+        uint32_t *out_addr_dst)
 {
   struct udp_dgram_hdr *hdr;
   struct udp_dgram_pseudo_hdr pseudo_hdr;
   uint8_t *payload;
-  struct in_addr a;
 
   assert (UINT16_MAX >= sizeof (*hdr) + data_len);
 
@@ -74,10 +71,8 @@ udp_tx (bool verbose, const char *addr_src, const char *addr_dst,
   hdr->port_src = htons (port_src);
   hdr->port_dst = htons (port_dst);
   hdr->len = htons (sizeof (*hdr) + data_len);
-  assert (0 != inet_aton (addr_src, &a));
-  pseudo_hdr.addr_src = a.s_addr;
-  assert (0 != inet_aton (addr_dst, &a));
-  pseudo_hdr.addr_dst = a.s_addr;
+  pseudo_hdr.addr_src = addr_src;
+  pseudo_hdr.addr_dst = addr_dst;
   pseudo_hdr.proto = htons (UDP_PROTO);
   pseudo_hdr.udp_len = hdr->len;
   /* Copy data payload */

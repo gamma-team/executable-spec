@@ -38,16 +38,16 @@
 
 #define RX_ERROR_NONE (0x0)
 #define RX_ERROR_CHECKSUM (0x1)
-#define RX_ERROR_PORT (0x2)
+#define RX_ERROR_PORT (0x2) /* no longer used */
 #define RX_ERROR_IP_HDR_LEN (0x4)
 #define RX_ERROR_NOT_UDP (0x8)
 
 /* Initializes and sends data to the internal data processing function.
  * Returns 0 on success
  */
-int udp_rx (bool verbose, uint16_t port_dst, const uint8_t *ip_dgram,
-            size_t ip_dgram_len, uint8_t *out, uint16_t *out_len,
-            uint16_t *out_port_dst, uint16_t *out_port_src,
+int udp_rx (bool verbose, uint32_t addr_src, uint32_t addr_dst, uint8_t proto,
+            const uint8_t *ip_dgram, size_t ip_dgram_len, uint8_t *out,
+            uint16_t *out_len, uint16_t *out_port_dst, uint16_t *out_port_src,
             uint32_t *out_addr_src);
 
 #endif /* RX_H */

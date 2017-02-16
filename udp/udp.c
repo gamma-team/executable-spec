@@ -34,6 +34,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#include <errno.h>
 #include "config.h"
 #include "rx.h"
 #include "tx.h"
@@ -43,12 +44,9 @@ usage (char *name)
 {
   fprintf (stderr,
            "Usage:\n"
-           "\t%s <rx|tx <addr_src> <addr_dst> <port_src>> <port_dst> <len>\n"
+           "\t%s <rx|tx> <len>\n"
            "\nInput is read from stdin, output is sent to stdout.\n"
-           "\nRX Mode:\n"
-           "Input is a single raw IP datagram of length len."
-           "\nTX Mode:\n"
-           "Input is a raw UDP data payload of length len.\n",
+           "len is the length of the input\n",
            name);
 }
 
@@ -59,14 +57,16 @@ main (int argc, char **argv)
   FILE *fp_in, *fp_out;
   uint8_t buf_in[IP_MAX_DGRAM_LEN], buf_out[IP_MAX_DGRAM_LEN];
   bool rx;
-  size_t len;
+  unsigned long long len;
   uint16_t buf_out_len;
   uint32_t result_addr_src, result_addr_dst;
   uint16_t port_dst, port_src;
   uint16_t result_port_dst, result_port_src;
-  char *addr_src, *addr_dst;
+  uint8_t proto;
+  uint32_t addr_src, addr_dst;
+  long data_len;
 
-  if (argc < 2)
+  if (argc < 3)
     {
       fprintf (stderr, "Not enough arguments\n");
       usage (argv[0]);
@@ -82,43 +82,52 @@ main (int argc, char **argv)
       usage (argv[0]);
       return EXIT_FAILURE;
     }
-  if (rx)
+  errno = 0;
+  len = strtoull (argv[2], NULL, 0);
+  if (0 != errno)
     {
-      if (argc < 4)
-        {
-          fprintf (stderr, "Not enough arguments\n");
-          usage (argv[0]);
-          return EXIT_FAILURE;
-        }
-      port_dst = atoi (argv[2]);
-      len = atoi (argv[3]);
-    }
-  else
-    {
-      if (argc < 7)
-        {
-          fprintf (stderr, "Not enough arguments\n");
-          usage (argv[0]);
-          return EXIT_FAILURE;
-        }
-      addr_src = argv[2];
-      addr_dst = argv[3];
-      port_src = atoi (argv[4]);
-      port_dst = atoi (argv[5]);
-      len = atoi (argv[6]);
+      fprintf (stderr, "Invalid len\n");
+      return EXIT_FAILURE;
     }
 
   fp_in = stdin;
   fp_out = stdout;
-  assert (1 == fread (buf_in, len, 1, fp_in));
   if (rx)
-    status = udp_rx (true, port_dst, buf_in, len, buf_out, &buf_out_len,
-                     &result_port_dst, &result_port_src,
-                     &result_addr_src);
+    {
+      /* RX input file format:
+       * Source address
+       * Destination address
+       * Protocol
+       * IP datagram data section
+       */
+      assert (1 == fread (&addr_src, sizeof (addr_src), 1, fp_in));
+      assert (1 == fread (&addr_dst, sizeof (addr_dst), 1, fp_in));
+      assert (1 == fread (&proto, sizeof (proto), 1, fp_in));
+      data_len = len - ftell (fp_in);
+      assert (1 == fread (buf_in, data_len, 1, fp_in));
+      status = udp_rx (true, addr_src, addr_dst, proto, buf_in, len, buf_out,
+                       &buf_out_len, &result_port_dst, &result_port_src,
+                       &result_addr_src);
+    }
   else
-    status = udp_tx (true, addr_src, addr_dst, port_src, port_dst, buf_in,
-                     len, buf_out, &buf_out_len, &result_addr_src,
-                     &result_addr_dst);
+    {
+      /* TX input file format:
+       * Source address
+       * Destination address
+       * Source port
+       * Destination port
+       * Data for the UDP datagram data section
+       */
+      assert (1 == fread (&addr_src, sizeof (addr_src), 1, fp_in));
+      assert (1 == fread (&addr_dst, sizeof (addr_dst), 1, fp_in));
+      assert (1 == fread (&port_src, sizeof (port_src), 1, fp_in));
+      assert (1 == fread (&port_dst, sizeof (port_dst), 1, fp_in));
+      data_len = len - ftell (fp_in);
+      assert (1 == fread (buf_in, data_len, 1, fp_in));
+      status = udp_tx (true, addr_src, addr_dst, port_src, port_dst, buf_in,
+                       len, buf_out, &buf_out_len, &result_addr_src,
+                       &result_addr_dst);
+    }
   if (0 != status)
     {
       fprintf (stderr, "Transfer error: %x\n", status);
