@@ -176,7 +176,7 @@ udp_rx (bool verbose, uint16_t port, const uint8_t *ip_dgram,
         size_t ip_dgram_len, uint8_t *out, uint16_t *out_len,
         uint16_t *port_src, uint32_t *addr_src)
 {
-  assert (ip_dgram_len <= UINT16_MAX + 1);
+  assert (ip_dgram_len <= UINT16_MAX);
 
   error = RX_ERROR_NONE;
   count = 0;
