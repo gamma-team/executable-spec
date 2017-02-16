@@ -46,11 +46,9 @@ usage (char *name)
            "\t%s <rx|tx <addr_src> <addr_dst> <port_src>> <port_dst> <len>\n"
            "\nInput is read from stdin, output is sent to stdout.\n"
            "\nRX Mode:\n"
-           "Input is consecutive raw IP datagrams of length len. Output is\n"
-           "raw UDP payloads if their datagram is valid.\n"
+           "Input is a single raw IP datagram of length len."
            "\nTX Mode:\n"
-           "Input is consecutive raw UDP data payloads of length len. Output\n"
-           "is raw UDP datagrams with the input data as their payloads.\n",
+           "Input is a raw UDP data payload of length len.\n",
            name);
 }
 
@@ -60,7 +58,6 @@ main (int argc, char **argv)
   int status;
   FILE *fp_in, *fp_out;
   uint8_t buf_in[IP_MAX_DGRAM_LEN], buf_out[IP_MAX_DGRAM_LEN];
-  size_t n;
   bool rx;
   size_t len;
   uint16_t buf_out_len;
@@ -113,65 +110,51 @@ main (int argc, char **argv)
 
   fp_in = stdin;
   fp_out = stdout;
-  while (0 == feof (fp_in))
+  assert (1 == fread (buf_in, len, 1, fp_in));
+  if (rx)
+    status = udp_rx (true, port_dst, buf_in, len, buf_out, &buf_out_len,
+                     &result_port_dst, &result_port_src,
+                     &result_addr_src);
+  else
+    status = udp_tx (true, addr_src, addr_dst, port_src, port_dst, buf_in,
+                     len, buf_out, &buf_out_len, &result_addr_src,
+                     &result_addr_dst);
+  if (0 != status)
     {
-      n = fread (buf_in, len, 1, fp_in);
-      if (1 != n)
-        {
-          if (feof (fp_in))
-            break;
-          else
-            {
-              fprintf (stderr, "Input file read error\n");
-              status = EXIT_FAILURE;
-              goto err;
-            }
-        }
+      fprintf (stderr, "Transfer error: %x\n", status);
+      status = EXIT_FAILURE;
+      goto err;
+    }
+  else
+    {
       if (rx)
-        status = udp_rx (true, port_dst, buf_in, len, buf_out, &buf_out_len,
-                         &result_port_dst, &result_port_src,
-                         &result_addr_src);
-      else
-        status = udp_tx (true, addr_src, addr_dst, port_src, port_dst, buf_in,
-                         len, buf_out, &buf_out_len, &result_addr_src,
-                         &result_addr_dst);
-      if (0 != status)
         {
-          fprintf (stderr, "Transfer error: %x\n", status);
-          status = EXIT_FAILURE;
-          goto err;
+          /* RX file format:
+           * Source address
+           * Source port
+           * Destination port
+           * UDP datagram's data payload
+           */
+          assert (1 == fwrite (&result_addr_src, sizeof (result_addr_src),
+                               1, fp_out));
+          assert (1 == fwrite (&result_port_src, sizeof (result_port_src),
+                               1, fp_out));
+          assert (1 == fwrite (&result_port_dst, sizeof (result_port_dst),
+                               1, fp_out));
+          assert (1 == fwrite (buf_out, buf_out_len, 1, fp_out));
         }
       else
         {
-          if (rx)
-            {
-              /* RX file format:
-               * Source address
-               * Source port
-               * Destination port
-               * UDP datagram's data payload
-               */
-              assert (1 == fwrite (&result_addr_src, sizeof (result_addr_src),
-                                   1, fp_out));
-              assert (1 == fwrite (&result_port_src, sizeof (result_port_src),
-                                   1, fp_out));
-              assert (1 == fwrite (&result_port_dst, sizeof (result_port_dst),
-                                   1, fp_out));
-              assert (1 == fwrite (buf_out, buf_out_len, 1, fp_out));
-            }
-          else
-            {
-              /* TX file format:
-               * Source address
-               * Destination address
-               * UDP datagram
-               */
-              assert (1 == fwrite (&result_addr_src, sizeof (result_addr_src),
-                                   1, fp_out));
-              assert (1 == fwrite (&result_addr_dst, sizeof (result_addr_dst),
-                                   1, fp_out));
-              assert (1 == fwrite (buf_out, buf_out_len, 1, fp_out));
-            }
+          /* TX file format:
+           * Source address
+           * Destination address
+           * UDP datagram
+           */
+          assert (1 == fwrite (&result_addr_src, sizeof (result_addr_src),
+                               1, fp_out));
+          assert (1 == fwrite (&result_addr_dst, sizeof (result_addr_dst),
+                               1, fp_out));
+          assert (1 == fwrite (buf_out, buf_out_len, 1, fp_out));
         }
     }
   status = EXIT_SUCCESS;
