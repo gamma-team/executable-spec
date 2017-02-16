@@ -49,11 +49,5 @@ tx.o: tx.c tx.h config.h checksum.h
 udp.o: udp.c config.h rx.h tx.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-check: udp
-	set -e; \
-	for i in pkt1 pkt2 pkt3 ; do \
-	  ./udp rx 60000 `wc -c $$i` < $$i; \
-	done;
-
 clean:
 	rm -f $(CLEANFILES)
