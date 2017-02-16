@@ -7,7 +7,7 @@ COMPONENT udp_rx
         -- All ports are assumed to be synchronous with Clk
         Clk : IN STD_LOGIC;
         Rst : IN STD_LOGIC;
-        -- Data input bus for UDP datagrams from the IP layer.
+        -- Data input bus for data from the IP layer.
         Data_in : IN STD_LOGIC_VECTOR(width * 8 - 1 DOWNTO 0);
         -- Assertion indicates which Data_in bytes are valid. If there are
         -- valid lanes, they will always be consecutive and start with the
@@ -24,6 +24,8 @@ COMPONENT udp_rx
         Addr_src_in : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
         -- Destination IP address. Valid when Data_in_start is asserted.
         Addr_dst_in : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
+        -- Protocol type. Valid when Data_in_start is asserted.
+        Proto_in : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
 
         -- UDP payload data output bus to the application layer. Valid byte
         -- lanes depend on Data_out_valid.
