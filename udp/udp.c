@@ -44,9 +44,8 @@ usage (char *name)
 {
   fprintf (stderr,
            "Usage:\n"
-           "\t%s <rx|tx> <len>\n"
-           "\nInput is read from stdin, output is sent to stdout.\n"
-           "len is the length of the input\n",
+           "\t%s <rx|tx>\n"
+           "\nInput is read from stdin, output is sent to stdout.\n",
            name);
 }
 
@@ -57,16 +56,15 @@ main (int argc, char **argv)
   FILE *fp_in, *fp_out;
   uint8_t buf_in[IP_MAX_DGRAM_LEN], buf_out[IP_MAX_DGRAM_LEN];
   bool rx;
-  unsigned long long len;
+  size_t len;
   uint16_t buf_out_len;
   uint32_t result_addr_src, result_addr_dst;
   uint16_t port_dst, port_src;
   uint16_t result_port_dst, result_port_src;
   uint8_t proto;
   uint32_t addr_src, addr_dst;
-  long data_len;
 
-  if (argc < 3)
+  if (argc < 2)
     {
       fprintf (stderr, "Not enough arguments\n");
       usage (argv[0]);
@@ -82,13 +80,6 @@ main (int argc, char **argv)
       usage (argv[0]);
       return EXIT_FAILURE;
     }
-  errno = 0;
-  len = strtoull (argv[2], NULL, 0);
-  if (0 != errno)
-    {
-      fprintf (stderr, "Invalid len\n");
-      return EXIT_FAILURE;
-    }
 
   fp_in = stdin;
   fp_out = stdout;
@@ -98,13 +89,14 @@ main (int argc, char **argv)
        * Source address
        * Destination address
        * Protocol
-       * IP datagram data section
+       * IP datagram data section (up to 65535 bytes)
        */
       assert (1 == fread (&addr_src, sizeof (addr_src), 1, fp_in));
       assert (1 == fread (&addr_dst, sizeof (addr_dst), 1, fp_in));
       assert (1 == fread (&proto, sizeof (proto), 1, fp_in));
-      data_len = len - ftell (fp_in);
-      assert (1 == fread (buf_in, data_len, 1, fp_in));
+      len = fread (buf_in, 1, UINT16_MAX, fp_in);
+      if (UINT16_MAX != len)
+        assert (!ferror (fp_in));
       status = udp_rx (true, addr_src, addr_dst, proto, buf_in, len, buf_out,
                        &buf_out_len, &result_port_dst, &result_port_src,
                        &result_addr_src);
@@ -116,14 +108,15 @@ main (int argc, char **argv)
        * Destination address
        * Source port
        * Destination port
-       * Data for the UDP datagram data section
+       * Data for the UDP datagram data section (up to 65535 - 8 bytes)
        */
       assert (1 == fread (&addr_src, sizeof (addr_src), 1, fp_in));
       assert (1 == fread (&addr_dst, sizeof (addr_dst), 1, fp_in));
       assert (1 == fread (&port_src, sizeof (port_src), 1, fp_in));
       assert (1 == fread (&port_dst, sizeof (port_dst), 1, fp_in));
-      data_len = len - ftell (fp_in);
-      assert (1 == fread (buf_in, data_len, 1, fp_in));
+      len = fread (buf_in, 1, UINT16_MAX - UDP_HDR_LEN, fp_in);
+      if (UINT16_MAX - UDP_HDR_LEN != len)
+        assert (!ferror (fp_in));
       status = udp_tx (true, addr_src, addr_dst, port_src, port_dst, buf_in,
                        len, buf_out, &buf_out_len, &result_addr_src,
                        &result_addr_dst);
