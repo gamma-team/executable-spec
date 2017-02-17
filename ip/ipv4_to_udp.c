@@ -14,6 +14,7 @@ int main(int argc, char *argv[])
     FILE *rp;
     FILE *wp;
     unsigned int ip_hdr_len;
+    int protocol;
     int current_byte;
     int packet_length;
     int i;
@@ -49,10 +50,18 @@ int main(int argc, char *argv[])
             printf("IPv4 header length either too short or too long, exiting\n");
             break;
         }
-        fgetc(rp);
+        fgetc(rp); /* Skip ToS */
         packet_length = (fgetc(rp)<<8)|fgetc(rp);
+
+        fseek(rp, 5, SEEK_CUR); /* Skip ID/flags/fragments/TTL */
+        protocol = fgetc(rp);
         /* TODO: Add IPv4 checksum check (bytes 11/12) */
-        fseek(rp, ip_hdr_len-4, SEEK_CUR);
+        fseek(rp, 2, SEEK_CUR); /* Skip checksum */
+        /* Write source and destination addresses to file */
+        for(i=0; i<8; i++)
+            fputc(fgetc(rp), wp);
+        /* Write protocol type to file */
+        fputc(protocol, wp);
         /* Now at start of UDP header */
         /* TODO: Add UDP total length check (bytes 5/6), checksum check (bytes 7/8) */
         for(i=0; i<packet_length-ip_hdr_len; i++)
