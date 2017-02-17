@@ -44,7 +44,7 @@ usage (char *name)
 {
   fprintf (stderr,
            "Usage:\n"
-           "\t%s <rx|tx>\n"
+           "\t%s <rx|tx> [--verbose|-v]\n"
            "\nInput is read from stdin, output is sent to stdout.\n",
            name);
 }
@@ -55,7 +55,7 @@ main (int argc, char **argv)
   int status;
   FILE *fp_in, *fp_out;
   uint8_t buf_in[IP_MAX_DGRAM_LEN], buf_out[IP_MAX_DGRAM_LEN];
-  bool rx;
+  bool rx, verbose;
   size_t len;
   uint16_t buf_out_len;
   uint32_t result_addr_src, result_addr_dst;
@@ -80,6 +80,11 @@ main (int argc, char **argv)
       usage (argv[0]);
       return EXIT_FAILURE;
     }
+  verbose = false;
+  if (argc >= 3)
+    if (0 == strcmp (argv[2], "--verbose")
+        || 0 == strcmp (argv[2], "-v"))
+      verbose = true;
 
   fp_in = stdin;
   fp_out = stdout;
@@ -97,9 +102,9 @@ main (int argc, char **argv)
       len = fread (buf_in, 1, UINT16_MAX, fp_in);
       if (UINT16_MAX != len)
         assert (!ferror (fp_in));
-      status = udp_rx (true, addr_src, addr_dst, proto, buf_in, len, buf_out,
-                       &buf_out_len, &result_port_dst, &result_port_src,
-                       &result_addr_src);
+      status = udp_rx (verbose, addr_src, addr_dst, proto, buf_in, len,
+                       buf_out, &buf_out_len, &result_port_dst,
+                       &result_port_src, &result_addr_src);
     }
   else
     {
@@ -117,8 +122,8 @@ main (int argc, char **argv)
       len = fread (buf_in, 1, UINT16_MAX - UDP_HDR_LEN, fp_in);
       if (UINT16_MAX - UDP_HDR_LEN != len)
         assert (!ferror (fp_in));
-      status = udp_tx (true, addr_src, addr_dst, port_src, port_dst, buf_in,
-                       len, buf_out, &buf_out_len, &result_addr_src,
+      status = udp_tx (verbose, addr_src, addr_dst, port_src, port_dst,
+                       buf_in, len, buf_out, &buf_out_len, &result_addr_src,
                        &result_addr_dst);
     }
   if (0 != status)
