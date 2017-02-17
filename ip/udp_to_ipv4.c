@@ -39,11 +39,6 @@ int main(int argc, char *argv[])
         exit(3);
     }
 
-    fputc(0x45, wp);
-    fputc(0x00, wp);
-    fputc(0x00, wp);
-    fputc(0x45, wp);
-
     while((current_byte = fgetc(rp)) != EOF){
         current_byte = apuh[0];
         for(i=1;i<16; i++) {
