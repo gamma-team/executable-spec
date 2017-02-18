@@ -38,7 +38,22 @@
 
 #define TX_ERROR_NONE (0x0)
 
-/* Returns 0 on success */
+/* UDP transmitter executable spec
+ *
+ * verbose: Enable debug printing to stderr if true
+ * addr_src: IPv4 source address in network byte order
+ * addr_dst: IPv4 destination address in network byte order
+ * port_src: UDP source port in network byte order
+ * port_dst: UDP destination port in network byte order
+ * data: UDP data section data
+ * data_len: Length of data
+ * out: Output for the complete UDP datagram
+ * out_len: Length of data written to out
+ * out_addr_src: Set to the value of addr_src
+ * out_addr_dst: Set to the value of addr_dst
+ *
+ * Returns 0 on success
+ */
 int udp_tx (bool verbose, uint32_t addr_src, uint32_t addr_dst,
             uint16_t port_src, uint16_t port_dst, const uint8_t *data,
             size_t data_len, uint8_t *out, uint16_t *out_len,

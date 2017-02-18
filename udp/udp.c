@@ -45,7 +45,8 @@ usage (char *name)
   fprintf (stderr,
            "Usage:\n"
            "\t%s <rx|tx> [--verbose|-v]\n"
-           "\nInput is read from stdin, output is sent to stdout.\n",
+           "\nInput is read from stdin, output is sent to stdout. In verbose\n"
+           "mode, extra information about the transaction is printed to stderr\n",
            name);
 }
 
@@ -90,7 +91,7 @@ main (int argc, char **argv)
   fp_out = stdout;
   if (rx)
     {
-      /* RX input file format:
+      /* RX input file format (all integer types are network byte order):
        * Source address
        * Destination address
        * Protocol
@@ -108,7 +109,7 @@ main (int argc, char **argv)
     }
   else
     {
-      /* TX input file format:
+      /* TX input file format (all integer types are network byte order):
        * Source address
        * Destination address
        * Source port
@@ -136,7 +137,7 @@ main (int argc, char **argv)
     {
       if (rx)
         {
-          /* RX file format:
+          /* RX output file format (all integer types are network byte order):
            * Source address
            * Source port
            * Destination port
@@ -152,7 +153,7 @@ main (int argc, char **argv)
         }
       else
         {
-          /* TX file format:
+          /* TX output file format (all integer types are network byte order):
            * Source address
            * Destination address
            * UDP datagram

@@ -36,12 +36,13 @@ def write_file(f, args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Create input-data files for UDP RX')
-    parser.add_argument('src')
-    parser.add_argument('dst')
-    parser.add_argument('sport', type=int)
-    parser.add_argument('dport', type=int)
-    parser.add_argument('data')
-    parser.add_argument('-o', dest='fname', default=None)
+    parser.add_argument('src', help='IPv4 source address, e.g., 127.0.0.1')
+    parser.add_argument('dst',
+                        help='IPv4 destination address, e.g., 127.0.0.1')
+    parser.add_argument('sport', type=int, help='UDP source port')
+    parser.add_argument('dport', type=int, help='UDP destination port')
+    parser.add_argument('data', help='Data for the UDP payload (string)')
+    parser.add_argument('-o', dest='fname', default=None, help='Output file')
     args = parser.parse_args()
 
     if args.fname:

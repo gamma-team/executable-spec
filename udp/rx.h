@@ -42,7 +42,22 @@
 #define RX_ERROR_IP_HDR_LEN (0x4) /* no longer used */
 #define RX_ERROR_NOT_UDP (0x8)
 
-/* Initializes and sends data to the internal data processing function.
+/* UDP receiver executable spec
+ *
+ * verbose: Enable debug printing to stderr if true
+ * addr_src: IPv4 source address in network byte order
+ * addr_dst: IPv4 destination address in network byte order
+ * proto: Protocol of dgram from the IP header
+ * dgram: IP data section
+ * dgram_len: Length of dgram
+ * out: Output array for the datasection of dgram if it is UDP
+ * out_len: Length of data written to out
+ * out_port_dst: Output for the destination port read from the UDP header
+ *               (network byte order)
+ * out_port_src: Output for the source port read from the UDP header (network
+ *               byte order)
+ * out_addr_src: Set to the value of addr_src
+ *
  * Returns 0 on success
  */
 int udp_rx (bool verbose, uint32_t addr_src, uint32_t addr_dst, uint8_t proto,
