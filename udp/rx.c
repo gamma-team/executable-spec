@@ -43,10 +43,6 @@
 /* Think of these as registers */
 static int error;
 static size_t count;
-static uint8_t hdr_ip_hdr_len;
-static uint32_t hdr_ip_addr_src;
-static uint32_t hdr_ip_addr_dst;
-static uint16_t hdr_ip_len;
 static uint16_t hdr_udp_port_src;
 static uint16_t hdr_udp_port_dst;
 static uint16_t hdr_udp_checksum;
@@ -60,21 +56,19 @@ static uint16_t hdr_udp_len;
  * data, rather than just extracting data from a complete datagram.
  */
 static void
-udp_rx_pipeline (const uint8_t *data, size_t len, uint8_t *out,
-                 size_t *out_len)
+udp_rx_pipeline (size_t dgram_len, const uint8_t *data, size_t len,
+                 uint8_t *out, size_t *out_len)
 {
-  if (0 == count)
-    hdr_ip_hdr_len = IP_HDR_LEN_MIN;
   /* Require minimum 4 byte bus, should always get minimum of 32bits at a time
-   * during header data transfer. IP and UDP header fields never cross 32bit
+   * during header data transfer. UDP header fields never cross 32bit
    * boundaries either, so don't allow non-dword aligned len.
    */
-  if (count < hdr_ip_hdr_len + UDP_HDR_LEN)
+  if (count < UDP_HDR_LEN)
     {
       if (4 > len)
-        assert (count + len >= hdr_ip_hdr_len + UDP_HDR_LEN);
+        assert (count + len >= UDP_HDR_LEN);
       /* Check alignment if this transfer will only be header data */
-      if (count + len <= hdr_ip_hdr_len + UDP_HDR_LEN)
+      if (count + len <= UDP_HDR_LEN)
         assert (0 == len % 4);
     }
 
@@ -84,69 +78,30 @@ udp_rx_pipeline (const uint8_t *data, size_t len, uint8_t *out,
     return;
   for (size_t i = count; i < count + len; ++i, ++data)
     {
-      if (i < hdr_ip_hdr_len + UDP_HDR_LEN)
+      if (i < UDP_HDR_LEN)
         {
           /* unpack big endian */
           uint16_t s = *(uint16_t *)data;
-          uint32_t l = *(uint32_t *)data;
-          if (i < hdr_ip_hdr_len)
+          switch (i)
             {
-              /* Handle virtual header checksumming and information extraction
-               * from the IP header
-               */
-              switch (i)
-                {
-                case IP_HDR_OFF_VER_IHL:
-                  hdr_ip_hdr_len = (*data & 0xf);
-                  if (hdr_ip_hdr_len < 5)
-                    error |= RX_ERROR_IP_HDR_LEN;
-                  /* Convert to octet length */
-                  hdr_ip_hdr_len *= 4;
-                  break;
-                case IP_HDR_OFF_LEN:
-                  hdr_ip_len = ntohs (s);
-                  checksum_update (htons (hdr_ip_len - hdr_ip_hdr_len));
-                  break;
-                case IP_HDR_OFF_PROTO:
-                  if (UDP_PROTO != *data)
-                    error |= RX_ERROR_NOT_UDP;
-                  checksum_update (htons (UDP_PROTO));
-                  break;
-                case IP_HDR_OFF_ADDR_SRC:
-                  hdr_ip_addr_src = ntohl (l);
-                  checksum_update32 (l);
-                  break;
-                case IP_HDR_OFF_ADDR_DST:
-                  hdr_ip_addr_dst = ntohl (l);
-                  checksum_update32 (l);
-                  break;
-                default:
-                  break;
-                }
-            }
-          else
-            {
-              switch (i - hdr_ip_hdr_len)
-                {
-                case UDP_HDR_OFF_PORT_SRC:
-                  hdr_udp_port_src = ntohs (s);
-                  checksum_update (s);
-                  break;
-                case UDP_HDR_OFF_PORT_DST:
-                  hdr_udp_port_dst = ntohs (s);
-                  checksum_update (s);
-                  break;
-                case UDP_HDR_OFF_LEN:
-                  hdr_udp_len = ntohs (s);
-                  checksum_update (s);
-                  break;
-                case UDP_HDR_OFF_CHK:
-                  hdr_udp_checksum = ntohs (s);
-                  checksum_update (s);
-                  break;
-                default:
-                  break;
-                }
+            case UDP_HDR_OFF_PORT_SRC:
+              hdr_udp_port_src = ntohs (s);
+              checksum_update (s);
+              break;
+            case UDP_HDR_OFF_PORT_DST:
+              hdr_udp_port_dst = ntohs (s);
+              checksum_update (s);
+              break;
+            case UDP_HDR_OFF_LEN:
+              hdr_udp_len = ntohs (s);
+              checksum_update (s);
+              break;
+            case UDP_HDR_OFF_CHK:
+              hdr_udp_checksum = ntohs (s);
+              checksum_update (s);
+              break;
+            default:
+              break;
             }
         }
       else
@@ -154,7 +109,7 @@ udp_rx_pipeline (const uint8_t *data, size_t len, uint8_t *out,
           if (0 == i % 2)
             {
               /* last octet in an odd-length payload */
-              if (i + 1 >= hdr_ip_len)
+              if (i + 1 >= dgram_len)
                 /* pad with zero; use htons for portability */
                 checksum_update (htons (*data << 8));
               else
@@ -170,25 +125,30 @@ udp_rx_pipeline (const uint8_t *data, size_t len, uint8_t *out,
 
 int
 udp_rx (bool verbose, uint32_t addr_src, uint32_t addr_dst, uint8_t proto,
-        const uint8_t *ip_dgram, size_t ip_dgram_len, uint8_t *out,
+        const uint8_t *dgram, size_t dgram_len, uint8_t *out,
         uint16_t *out_len, uint16_t *out_port_dst, uint16_t *out_port_src,
         uint32_t *out_addr_src)
 {
-  assert (ip_dgram_len <= UINT16_MAX);
+  assert (dgram_len <= UINT16_MAX);
   assert (proto == UDP_PROTO);
 
   error = RX_ERROR_NONE;
   count = 0;
   checksum_reset ();
 
+  /* Virtual header checksumming */
+  checksum_update (htons (dgram_len));
+  checksum_update (htons (UDP_PROTO));
+  checksum_update32 (addr_src);
+  checksum_update32 (addr_dst);
   *out_len = 0;
-  for (size_t i = 0; i < ip_dgram_len; i += UDP_DATA_WIDTH_BYTES)
+  for (size_t i = 0; i < dgram_len; i += UDP_DATA_WIDTH_BYTES)
     {
       size_t l;
-      if (ip_dgram_len - i < UDP_DATA_WIDTH_BYTES)
-        udp_rx_pipeline (&ip_dgram[i], ip_dgram_len - i, out, &l);
+      if (dgram_len - i < UDP_DATA_WIDTH_BYTES)
+        udp_rx_pipeline (dgram_len, &dgram[i], dgram_len - i, out, &l);
       else
-        udp_rx_pipeline (&ip_dgram[i], UDP_DATA_WIDTH_BYTES, out, &l);
+        udp_rx_pipeline (dgram_len, &dgram[i], UDP_DATA_WIDTH_BYTES, out, &l);
       *out_len += l;
       out += l;
     }
@@ -203,9 +163,9 @@ udp_rx (bool verbose, uint32_t addr_src, uint32_t addr_dst, uint8_t proto,
     {
       struct in_addr a;
 
-      a.s_addr = htonl (hdr_ip_addr_src);
+      a.s_addr = addr_src;
       fprintf (stderr, "Source Address: %s\n", inet_ntoa (a));
-      a.s_addr = htonl (hdr_ip_addr_dst);
+      a.s_addr = addr_dst;
       fprintf (stderr, "Destination Address: %s\n", inet_ntoa (a));
       fprintf (stderr, "Source Port: %" PRIu16 "\n", hdr_udp_port_src);
       fprintf (stderr, "Destination Port: %" PRIu16 "\n", hdr_udp_port_dst);
