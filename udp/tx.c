@@ -68,8 +68,8 @@ udp_tx (bool verbose, uint32_t addr_src, uint32_t addr_dst, uint16_t port_src,
   hdr = (struct udp_dgram_hdr *)out;
   payload = out + sizeof (*hdr);
 
-  hdr->port_src = htons (port_src);
-  hdr->port_dst = htons (port_dst);
+  hdr->port_src = port_src;
+  hdr->port_dst = port_dst;
   hdr->len = htons (sizeof (*hdr) + data_len);
   pseudo_hdr.addr_src = addr_src;
   pseudo_hdr.addr_dst = addr_dst;
