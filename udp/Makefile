@@ -31,7 +31,8 @@ CC=gcc
 CFLAGS=-Wall -Wextra -O2 -std=c99 -D_DEFAULT_SOURCE
 OBJ=udp.o rx.o tx.o checksum.o
 CLEANFILES=$(OBJ) udp rx-odd.res.bin rx-odd2.res.bin rx-even.res.bin \
-	tx-odd.res.bin tx-odd2.res.bin tx-even.res.bin
+	rx-zero-len.res.bin tx-odd.res.bin tx-odd2.res.bin tx-even.res.bin \
+	tx-zero-len.res.bin
 
 all: udp
 
@@ -52,13 +53,13 @@ udp.o: udp.c config.h rx.h tx.h
 
 check: udp
 	@set -e; \
-	for i in rx-odd rx-odd2 rx-even ; do \
+	for i in rx-odd rx-odd2 rx-even rx-zero-len ; do \
 	  ./udp rx < tests/$$i.bin > $$i.res.bin; \
 	  cmp tests/$$i.res.bin $$i.res.bin; \
 	  echo $$i pass ; \
 	done
 	@set -e; \
-	for i in tx-odd tx-odd2 tx-even ; do \
+	for i in tx-odd tx-odd2 tx-even tx-zero-len ; do \
 	  ./udp tx < tests/$$i.bin > $$i.res.bin; \
 	  cmp tests/$$i.res.bin $$i.res.bin; \
 	  echo $$i pass ; \
