@@ -30,7 +30,8 @@
 CC=gcc
 CFLAGS=-Wall -Wextra -O2 -std=c99 -D_DEFAULT_SOURCE
 OBJ=udp.o rx.o tx.o checksum.o
-CLEANFILES=$(OBJ) udp
+CLEANFILES=$(OBJ) udp rx-odd.res.bin rx-odd2.res.bin rx-even.res.bin \
+	tx-odd.res.bin tx-odd2.res.bin tx-even.res.bin
 
 all: udp
 
