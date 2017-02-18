@@ -149,7 +149,8 @@ main (int argc, char **argv)
                                1, fp_out));
           assert (1 == fwrite (&result_port_dst, sizeof (result_port_dst),
                                1, fp_out));
-          assert (1 == fwrite (buf_out, buf_out_len, 1, fp_out));
+          if (0 != buf_out_len) /* Zero length payloads are legal */
+            assert (1 == fwrite (buf_out, buf_out_len, 1, fp_out));
         }
       else
         {
