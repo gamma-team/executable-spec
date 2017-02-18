@@ -49,5 +49,19 @@ tx.o: tx.c tx.h config.h checksum.h
 udp.o: udp.c config.h rx.h tx.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
+check: udp
+	@set -e; \
+	for i in rx-odd rx-odd2 rx-even ; do \
+	  ./udp rx < tests/$$i.bin > $$i.res.bin; \
+	  cmp tests/$$i.res.bin $$i.res.bin; \
+	  echo $$i pass ; \
+	done
+	@set -e; \
+	for i in tx-odd tx-odd2 tx-even ; do \
+	  ./udp tx < tests/$$i.bin > $$i.res.bin; \
+	  cmp tests/$$i.res.bin $$i.res.bin; \
+	  echo $$i pass ; \
+	done
+
 clean:
 	rm -f $(CLEANFILES)
