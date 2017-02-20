@@ -1,4 +1,4 @@
-COMPONENT udp_rx
+COMPONENT udp_rx IS
     GENERIC (
         -- Input and output bus width in bytes, must be a power of 2
         width : POSITIVE := 8
@@ -37,7 +37,8 @@ COMPONENT udp_rx
         -- given, that is, it is only possible for partially valid data on the
         -- last data cycle.
         Data_out_valid : OUT STD_LOGIC_VECTOR(width - 1 DOWNTO 0);
-        -- Assertion indicates that the first data is available on Data_out.
+        -- Assertion indicates that the first data is or will soon be
+        -- available on Data_out.
         Data_out_start : OUT STD_LOGIC;
         -- Asserted when the last data is available on Data_out.
         Data_out_end : OUT STD_LOGIC;
@@ -48,7 +49,7 @@ COMPONENT udp_rx
         Addr_src_out : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
         -- Source port from the UDP header. Valid when Data_out_start is
         -- asserted.
-        Port_src_out : OUT STD_LOGIC_VECTOR(15 DOWNTO 0)
+        Port_src_out : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
         -- Destination port from the UDP header. Valid when Data_out_start is
         -- asserted.
         Port_dst_out : OUT STD_LOGIC_VECTOR(15 DOWNTO 0)

@@ -1,4 +1,4 @@
-COMPONENT udp_tx
+COMPONENT udp_tx IS
     GENERIC (
         -- Input and output bus width in bytes, must be a power of 2
         width : POSITIVE := 8
@@ -39,7 +39,8 @@ COMPONENT udp_tx
         -- given, that is, it is only possible for partially valid data on the
         -- last data cycle.
         Data_out_valid : OUT STD_LOGIC_VECTOR(width - 1 DOWNTO 0);
-        -- Assertion indicates that the first data is available on Data_out.
+        -- Assertion indicates that the first data is or will soon be
+        -- available on Data_out.
         Data_out_start : OUT STD_LOGIC;
         -- Asserted when the last data is available on Data_out.
         Data_out_end : OUT STD_LOGIC;
@@ -49,6 +50,6 @@ COMPONENT udp_tx
         -- Source IP address. Valid when Data_out_start is asserted.
         Addr_src_out : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
         -- Destination IP address. Valid when Data_out_start is asserted.
-        Addr_dst_out : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
+        Addr_dst_out : OUT STD_LOGIC_VECTOR(31 DOWNTO 0)
     );
 END COMPONENT;
