@@ -51,7 +51,7 @@ COMPONENT ip_rx
         -- Source IP address. Valid when Data_out_start is asserted.
         Addr_src_out : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
         -- Destination IP address. Valid when Data_out_start is asserted.
-        Addr_dst_out : OUT STD_LOGIC_VECTOR(15 DOWNTO 0)
+        Addr_dst_out : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
         -- Protocol type. Valid when Data_out_start is asserted.
         Proto_out : OUT STD_LOGIC_VECTOR(15 DOWNTO 0)
     );
