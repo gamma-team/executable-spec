@@ -22,7 +22,7 @@ COMPONENT udp_rx IS
         Data_in_end : IN STD_LOGIC;
         -- Indicate that there has been an error in the current data stream.
         -- Data_in will be ignored until the next Data_in_start assertion.
-        Data_in_err : OUT STD_LOGIC;
+        Data_in_err : IN STD_LOGIC;
 
         -- UDP payload data output bus to the application layer.
         -- Byte offsets (all integer types are big endian):
