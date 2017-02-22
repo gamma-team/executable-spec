@@ -158,6 +158,7 @@ main (int argc, char **argv)
           /* TX output file format (all integer types are network byte order):
            * Source address
            * Destination address
+           * Protocol
            * UDP datagram
            */
           assert (1 == fwrite (&result_addr_src, sizeof (result_addr_src),
