@@ -62,6 +62,7 @@ main (int argc, char **argv)
   uint32_t result_addr_src, result_addr_dst;
   uint16_t port_dst, port_src;
   uint16_t result_port_dst, result_port_src;
+  uint8_t result_proto;
   uint8_t proto;
   uint32_t addr_src, addr_dst;
 
@@ -125,7 +126,7 @@ main (int argc, char **argv)
         assert (!ferror (fp_in));
       status = udp_tx (verbose, addr_src, addr_dst, port_src, port_dst,
                        buf_in, len, buf_out, &buf_out_len, &result_addr_src,
-                       &result_addr_dst);
+                       &result_addr_dst, &result_proto);
     }
   if (0 != status)
     {
@@ -163,6 +164,8 @@ main (int argc, char **argv)
                                1, fp_out));
           assert (1 == fwrite (&result_addr_dst, sizeof (result_addr_dst),
                                1, fp_out));
+          assert (1 == fwrite (&result_proto, sizeof (result_proto), 1,
+                               fp_out));
           assert (1 == fwrite (buf_out, buf_out_len, 1, fp_out));
         }
     }

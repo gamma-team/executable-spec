@@ -57,7 +57,7 @@ int
 udp_tx (bool verbose, uint32_t addr_src, uint32_t addr_dst, uint16_t port_src,
         uint16_t port_dst, const uint8_t *data, size_t data_len,
         uint8_t *out, uint16_t *out_len, uint32_t *out_addr_src,
-        uint32_t *out_addr_dst)
+        uint32_t *out_addr_dst, uint8_t *out_proto)
 {
   struct udp_dgram_hdr *hdr;
   struct udp_dgram_pseudo_hdr pseudo_hdr;
@@ -98,6 +98,7 @@ udp_tx (bool verbose, uint32_t addr_src, uint32_t addr_dst, uint16_t port_src,
   /* Fill in remaining outputs */
   *out_addr_src = pseudo_hdr.addr_src;
   *out_addr_dst = pseudo_hdr.addr_dst;
+  *out_proto = UDP_PROTO;
 
   if (verbose)
     {
