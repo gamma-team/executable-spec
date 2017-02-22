@@ -26,7 +26,8 @@ COMPONENT udp_tx IS
         -- Byte offsets (all integer types are big endian):
         -- 0: Source IP address
         -- 4: Destination IP address
-        -- 8: UDP datagram
+        -- 8: Protocol
+        -- 9: UDP datagram
         Data_out : OUT STD_LOGIC_VECTOR(width * 8 - 1 DOWNTO 0);
         -- Assertion indicates which Data_out bytes are valid.
         Data_out_valid : OUT STD_LOGIC_VECTOR(width - 1 DOWNTO 0);
