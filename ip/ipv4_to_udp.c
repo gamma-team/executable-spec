@@ -14,10 +14,11 @@ int main(int argc, char *argv[])
     FILE *rp;
     FILE *wp;
     unsigned int ip_hdr_len;
-    int protocol;
+    int ip_header[20];
     int current_byte;
     int packet_length;
     int i;
+    int checksum;
 
     if(argc != 3)
     {
@@ -41,29 +42,49 @@ int main(int argc, char *argv[])
     }
 
     while((current_byte = fgetc(rp)) != EOF){
+        /* Check first byte to see if the packet is valid */
         if((current_byte >> 4) & 0x0F != 4) {
             printf("Corrupted ipv4 packet encountered, exiting\n");
             break;
         }
         ip_hdr_len = (int)(current_byte & 0x0F)*4;
-        if(ip_hdr_len < 15 || ip_hdr_len > 60) {
+        /* if(ip_hdr_len < 20 || ip_hdr_len > 60) { */
+        if(ip_hdr_len != 20) {
             printf("IPv4 header length either too short or too long, exiting\n");
             break;
         }
-        fgetc(rp); /* Skip ToS */
-        packet_length = (fgetc(rp)<<8)|fgetc(rp);
 
-        fseek(rp, 5, SEEK_CUR); /* Skip ID/flags/fragments/TTL */
-        protocol = fgetc(rp);
-        /* TODO: Add IPv4 checksum check (bytes 11/12) */
-        fseek(rp, 2, SEEK_CUR); /* Skip checksum */
+        /* Store rest of header in array */
+        ip_header[0] = current_byte;
+        for(i=1;i<20;i++)
+            ip_header[i] = fgetc(rp);
+        if(ip_header[19] == EOF) {
+            printf("IPv4 header ended early, exiting\n");
+            break;
+        }
+
         /* Write source and destination addresses to file */
-        for(i=0; i<8; i++)
-            fputc(fgetc(rp), wp);
+        for(i=12; i<20; i++)
+            fputc(ip_header[i], wp);
+
         /* Write protocol type to file */
-        fputc(protocol, wp);
-        /* Now at start of UDP header */
-        /* TODO: Add UDP total length check (bytes 5/6), checksum check (bytes 7/8) */
+        fputc(ip_header[9], wp);
+
+        /* Verify checksum */
+        checksum = 0;
+        for(i=0;i<10;i++) {
+            checksum += ip_header[2*i]<<8;
+            checksum += ip_header[2*i+1];
+        }
+        while(checksum > 0xFFFF)
+            checksum = (checksum>>16) + (checksum&0xFFFF);
+        if(checksum != 0xFFFF) {
+            printf("Invalid checksum encountered, exiting\n");
+            break;
+        }
+
+        /* Calculate packet length then copy rest of packet based on it */
+        packet_length = (ip_header[2]<<8)|ip_header[3];
         for(i=0; i<packet_length-ip_hdr_len; i++)
             fputc(fgetc(rp), wp);
     }
