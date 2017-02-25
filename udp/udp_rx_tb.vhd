@@ -1,3 +1,4 @@
+-- Not Finalized
 library ieee;
 use ieee.std_logic_1164.all;
 --use ieee.numeric_std.all;
@@ -133,7 +134,7 @@ begin
     --Data_err <= '0';
 	
     file_close(In_file);
-    report "TB - IPv4 packets has been loaded successfully";
+    report "TB - IPv4 packets have been loaded successfully";
     TB_Completed <= '1';
     wait;
 end process;    
