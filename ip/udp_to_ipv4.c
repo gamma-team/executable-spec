@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
     const char *udp_filename;
     FILE *rp;
     FILE *wp;
-    int apuh[16]; /* Addresses plus protocol */
+    int apuh[16]; /* Addresses plus udp header */
     int current_byte;
     int i;
     int packet_length;
@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
 
     if(argc != 3)
     {
-        fprintf(stderr, "Need exactly two argument: udp packets filename and desired ipv4 packets filename\n");
+        fprintf(stderr, "Need exactly two arguments: udp packets filename and desired ipv4 packets filename\n");
         exit(1);
     }
 

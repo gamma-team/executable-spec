@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
 
     if(argc != 3)
     {
-        fprintf(stderr, "Need exactly two argument: ipv4 packets filename and desired udp packets filename\n");
+        fprintf(stderr, "Need exactly two arguments: ipv4 packets filename and desired udp packets filename\n");
         exit(1);
     }
 

@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
 
     if(argc != 3)
     {
-        fprintf(stderr, "Need exactly two argument: pcap dump filename(.pcap) and desired output IPv4 packets filename\n");
+        fprintf(stderr, "Need exactly two arguments: pcap dump filename(.pcap) and desired output IPv4 packets filename\n");
         exit(1);
     }
 
