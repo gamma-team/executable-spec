@@ -63,13 +63,6 @@ int main(int argc, char *argv[])
             break;
         }
 
-        /* Write source and destination addresses to file */
-        for(i=12; i<20; i++)
-            fputc(ip_header[i], wp);
-
-        /* Write protocol type to file */
-        fputc(ip_header[9], wp);
-
         /* Verify checksum */
         checksum = 0;
         for(i=0;i<10;i++) {
@@ -82,6 +75,13 @@ int main(int argc, char *argv[])
             printf("Invalid checksum encountered, exiting\n");
             break;
         }
+
+        /* Write protocol type to file */
+        fputc(ip_header[9], wp);
+
+        /* Write source and destination addresses to file */
+        for(i=12; i<20; i++)
+            fputc(ip_header[i], wp);
 
         /* Calculate packet length then copy rest of packet based on it */
         packet_length = (ip_header[2]<<8)|ip_header[3];
