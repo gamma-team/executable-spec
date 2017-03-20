@@ -16,10 +16,13 @@ COMPONENT ip_tx IS
         Data_in : IN STD_LOGIC_VECTOR(width * 8 - 1 DOWNTO 0);
         -- Assertion indicates which Data_in bytes are valid.
         Data_in_valid : IN STD_LOGIC_VECTOR(width - 1 DOWNTO 0);
-        -- Asserted when the first data is available on Data_in
+        -- Asserted when the first data is available on Data_in.
         Data_in_start : IN STD_LOGIC;
         -- Asserted when the last valid data is available on Data_in.
         Data_in_end : IN STD_LOGIC;
+        -- Indicate that there has been an error in the current data stream.
+        -- Data_in will be ignored until the next Data_in_start assertion.
+        Data_in_err : IN STD_LOGIC;
 
         -- IPv4 output bus to the MAC.
         -- Byte offsets (all integer types are big endian):
