@@ -93,14 +93,14 @@ main (int argc, char **argv)
   if (rx)
     {
       /* RX input file format (all integer types are network byte order):
+       * Protocol
        * Source address
        * Destination address
-       * Protocol
        * IP datagram data section (up to 65535 bytes)
        */
+      assert (1 == fread (&proto, sizeof (proto), 1, fp_in));
       assert (1 == fread (&addr_src, sizeof (addr_src), 1, fp_in));
       assert (1 == fread (&addr_dst, sizeof (addr_dst), 1, fp_in));
-      assert (1 == fread (&proto, sizeof (proto), 1, fp_in));
       len = fread (buf_in, 1, UINT16_MAX, fp_in);
       if (UINT16_MAX != len)
         assert (!ferror (fp_in));

@@ -29,9 +29,9 @@ from scapy.all import IP, UDP
 def write_file(f, args):
     p = (IP(src=args.src, dst=args.dst)
          / UDP(sport=args.sport, dport=args.dport) / args.data)
+    f.write(struct.pack('!B', p.proto))
     f.write(socket.inet_aton(p.src))
     f.write(socket.inet_aton(p.dst))
-    f.write(struct.pack('!B', p.proto))
     f.write(str(p.getlayer('UDP')))
 
 if __name__ == '__main__':
