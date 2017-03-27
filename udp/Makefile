@@ -65,5 +65,23 @@ check: udp
 	  echo $$i pass ; \
 	done
 
+test_gen:
+	python2 udp_rx_in_gen.py 127.0.0.4 1.2.3.4 60001 60000 "" \
+	  -o tests/rx-zero-len.bin
+	python2 udp_rx_in_gen.py 127.0.0.2 1.2.3.4 60001 60000 "hii" \
+	  -o tests/rx-odd.bin
+	python2 udp_rx_in_gen.py 127.0.0.3 1.2.3.4 60001 60000 "hihih" \
+	  -o  tests/rx-odd2.bin
+	python2 udp_rx_in_gen.py 127.0.0.1 1.2.3.4 60001 60000 "hi" \
+	  -o  tests/rx-even.bin
+	python2 udp_tx_in_gen.py 127.0.0.4 1.2.3.4 60001 60000 "" \
+	  -o  tests/tx-zero-len.bin
+	python2 udp_tx_in_gen.py 127.0.0.2 1.2.3.4 60001 60000 "hii" \
+	  -o  tests/tx-odd.bin
+	python2 udp_tx_in_gen.py 127.0.0.3 1.2.3.4 60001 60000 "hihih" \
+	  -o  tests/tx-odd2.bin
+	python2 udp_tx_in_gen.py 127.0.0.1 1.2.3.4 60001 60000 "hi" \
+	  -o  tests/tx-even.bin
+
 clean:
 	rm -f $(CLEANFILES)
