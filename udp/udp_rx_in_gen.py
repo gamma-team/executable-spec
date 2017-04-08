@@ -26,13 +26,18 @@ import struct
 import sys
 from scapy.all import IP, UDP
 
-def write_file(f, args):
+def write_file(f_out, f_in, args):
+    if f_in:
+        data = f_in.read()
+    else:
+        data = args.data
+
     p = (IP(src=args.src, dst=args.dst)
-         / UDP(sport=args.sport, dport=args.dport) / args.data)
-    f.write(struct.pack('!B', p.proto))
-    f.write(socket.inet_aton(p.src))
-    f.write(socket.inet_aton(p.dst))
-    f.write(str(p.getlayer('UDP')))
+         / UDP(sport=args.sport, dport=args.dport) / data)
+    f_out.write(struct.pack('!B', p.proto))
+    f_out.write(socket.inet_aton(p.src))
+    f_out.write(socket.inet_aton(p.dst))
+    f_out.write(str(p.getlayer('UDP')))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Create input-data files for UDP RX')
@@ -41,12 +46,21 @@ if __name__ == '__main__':
                         help='IPv4 destination address, e.g., 127.0.0.1')
     parser.add_argument('sport', type=int, help='UDP source port')
     parser.add_argument('dport', type=int, help='UDP destination port')
-    parser.add_argument('data', help='Data for the UDP payload (string)')
-    parser.add_argument('-o', dest='fname', default=None, help='Output file')
+    parser.add_argument('--data', default='',
+                        help='Data for the UDP payload (string)')
+    parser.add_argument('-o', dest='fname_output', default=None,
+                        help='Output file')
+    parser.add_argument('-i', dest='fname_input', default=None,
+                        help='Data input for the UDP payload, overrides --data')
     args = parser.parse_args()
 
-    if args.fname:
-        with open(args.fname, 'w') as f:
-            write_file(f, args)
+    if args.fname_input:
+        f_in = open(args.fname_input, 'r')
     else:
-        write_file(sys.stdout, args)
+        f_in = None
+
+    if args.fname_output:
+        with open(args.fname_output, 'w') as f:
+            write_file(f, f_in, args)
+    else:
+        write_file(sys.stdout, f_in, args)
